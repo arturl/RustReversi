@@ -9,22 +9,22 @@ enum Color {
     White
 }
 
-fn color_short_name(color : Color) -> &'static str
+fn color_short_name(color : Color) -> String
 {
-    return match color {
+    match color {
             Color::Empty => " ",
             Color::Black => "B",
             Color::White => "W",
-        };
+        }.to_string()
 }
 
-fn color_full_name(color : Color) -> &'static str
+fn color_full_name(color : Color) -> String
 {
-    return match color {
+    match color {
             Color::Empty => "Empty",
             Color::Black => "Black",
             Color::White => "White",
-        };
+        }.to_string()
 }
 
 impl fmt::Display for Color {
