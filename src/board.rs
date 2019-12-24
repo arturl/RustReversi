@@ -1,36 +1,10 @@
 #![allow(dead_code)]
 
 use crate::color::Color;
+use crate::stat::*;
+use crate::transcript::*;
 use std::fmt;
 use log::{info, warn, trace, error, set_max_level};
-
-pub struct Pos {
-    index: usize,
-}
-
-impl Pos {
-    fn new(i: usize) -> Pos {
-        Pos { index: i }
-    }
-
-    fn i(&self) -> usize {
-        self.index
-    }
-}
-
-impl Iterator for Pos {
-    type Item = usize;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.index += 1;
-
-        if self.index < 64 {
-            Some(self.index)
-        } else {
-            None
-        }
-    }
-}
 
 #[derive(Clone, Copy)]
 pub struct Pos2D {
@@ -93,13 +67,16 @@ impl Board {
         self.board.iter()
     }
 
-    pub fn iter_pos(&self) -> impl Iterator<Item = Pos> + '_ {
-        self.board.iter().enumerate().map(|(x,y)| Pos::new(x))
-    }
-
-    //#[allow(non_snake_case)]
     pub fn iter_pos2d(&self) -> impl Iterator<Item = Pos2D> + '_ {
         self.board.iter().enumerate().map(|(x,y)| Pos2D::new(x/8, x %8))
+    }
+
+    pub fn replay_transcript(&mut self, transcript: &Transcript) {
+        let mut color = Color::Black;
+        for mv in transcript.moves.clone() {
+            self.place(mv.0, mv.1, color);
+            color = color.opposite();
+        }
     }
 
     const DIRS:  [[i32;2]; 8] = [   [-1,-1],
@@ -126,19 +103,19 @@ impl Board {
     }
 
     pub fn set_at(&mut self, i: usize, j: usize, color: Color) {
-        self.set_at_pos(Pos::new(j*8+i),color)
+        self.set_at_pos(j*8+i, color)
     }
 
     pub fn get_at(&self, i: usize, j: usize) -> Color {
-        self.get_at_pos(Pos::new(j*8+i))
+        self.get_at_pos(j*8+i)
     }
 
-    pub fn get_at_pos(&self, pos: Pos) -> Color {
-        self.board[pos.i()]
+    pub fn get_at_pos(&self, pos: usize) -> Color {
+        self.board[pos]
     }
 
-    pub fn set_at_pos(&mut self, pos: Pos, color: Color) {
-        self.board[pos.i()] = color
+    pub fn set_at_pos(&mut self, pos: usize, color: Color) {
+        self.board[pos] = color
     }
 
     pub fn set_at_c(&mut self, i: char, j: usize, color: Color) {
@@ -151,6 +128,10 @@ impl Board {
         let lc = i.to_ascii_lowercase();
         let ii = (lc.to_digit(36).unwrap() - 10) as usize;
         self.get_at(ii,j)
+    }
+
+    pub fn place_pos2d(&mut self, pos: Pos2D, color: Color) {
+        self.place(pos.i, pos.j, color)
     }
 
     pub fn place(&mut self, i: usize, j: usize, color: Color) {

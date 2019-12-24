@@ -15,6 +15,12 @@ use crate::board::Board;
 mod analysis;
 use crate::analysis::*;
 
+mod stat;
+use crate::stat::*;
+
+mod transcript;
+use crate::transcript::*;
+
 use std::io::{self, Read};
 use std::io::stdout;
 use std::io::Write;
@@ -26,6 +32,7 @@ fn main() {
         .filter_module("reversi", log::LevelFilter::Info)
         .filter_module("reversi::board", log::LevelFilter::Info)
         .filter_module("reversi::analysis", log::LevelFilter::Error)
+        .filter_module("reversi::stat", log::LevelFilter::Error)
         .init();
 
     let mut board = Board::new();
@@ -35,25 +42,9 @@ fn main() {
     board.set_at_c('E',3,Color::White);
     board.set_at_c('E',4,Color::Black);
 
-    // board.set_at_c('c',3,Color::White);
-    // board.set_at_c('d',3,Color::White);
-    // board.set_at_c('e',3,Color::White);
-    // board.set_at_c('c',4,Color::Black);
-    // board.set_at_c('d',4,Color::White);
-    // board.set_at_c('e',4,Color::Black);
-    // board.set_at_c('c',5,Color::Black);
-    // board.set_at_c('c',6,Color::Black);
-
-    // board.set_at_c('c',3,Color::White);
-    // board.set_at_c('d',3,Color::White);
-    // board.set_at_c('e',3,Color::White);
-    // board.set_at_c('c',4,Color::White);
-    // board.set_at_c('d',4,Color::Black);
-    // board.set_at_c('e',4,Color::Black);
-    // board.set_at_c('b',5,Color::White);
-    // board.set_at_c('c',5,Color::Black);
-    // board.set_at_c('d',5,Color::Black);
-    // board.set_at_c('a',6,Color::White);
+    let mut transcript = Transcript::new();
+    //let mut transcript = Transcript::from_trace("c4e5f2c3e6d2b3f6g7d5c5d6c6d7c2f7");
+    board.replay_transcript(&transcript);
 
     board.print();
 
@@ -79,14 +70,18 @@ fn main() {
         loop {
 
             if color == Color::White {
-                let ((i,j),_) = find_best_move(&board, color, true).unwrap();
-                board.place(i, j, color);
+                let mut stat = Stat::new();
+                let (pos, score) = find_best_move(&board, color, 0, true, &mut stat).unwrap();
+                board.place_pos2d(pos, color);
+                transcript.add(pos.i, pos.j);
                 board.print();
-                println!("Computer picked {}{}", ((i as u8)+97) as char, j);
+                println!("Computer picked {}. Reviewed {} nodes. Best score {}. Elapsed {:?}", 
+                    pos, stat.nodes_viewed, score, stat.start.elapsed());
                 break;
             }
 
             let hints = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color));
+            println!("transcript: {}", transcript);
             print!("Hint: ");
             for pat in hints {
                  print!("{} ", pat);
@@ -113,6 +108,7 @@ fn main() {
 
                 if board.can_place(xi,yi,color) {
                     board.place(xi,yi,color);
+                    transcript.add(xi,yi);
                     board.print();
                     break;
                 }

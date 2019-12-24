@@ -1,33 +1,40 @@
 #![allow(dead_code)]
 
 use log::{info, warn, trace, error, set_max_level};
+use std::time::{Duration, Instant};
 
 use crate::color::Color;
-use crate::board::Board;
+use crate::board::*;
+use crate::stat::Stat;
 
-pub fn find_best_move(board: &Board, color: Color, recurse: bool) -> Option<((usize, usize), i32)> {
+pub fn find_best_move(board: &Board, color: Color, level: i32, recurse: bool, stat: &mut Stat) -> Option<(Pos2D, i32)> {
     let possible_moves = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color));
-
     let mut max_score = -99999;
-    let mut best_move: Option<((usize, usize), i32)> = None;
+    let mut best_move: Option<(Pos2D, i32)> = None;
+    let mut indent = format!("[{}]", level);
+    for _ in 0..level {
+        indent += "    ";
+    }
     for mv in possible_moves {
         let mut board_copy = board.clone();
-        trace!("mv: {}", mv);
+        trace!("{}mv: {}", indent, mv);
         board_copy.place(mv.i, mv.j, color);
+        stat.nodes_viewed += 1;
 
         let possible_oppo_moves = board_copy.iter_pos2d().filter(|p| board_copy.can_place_pos2d(*p, color.opposite()));
 
         let mut min_score = 99999;
-        let mut best_oppo_move: Option<((usize, usize), i32)> = None;
+        let mut best_oppo_move: Option<(Pos2D, i32)> = None;
         for mv_oppo in possible_oppo_moves {
             let mut board_copy2 = board_copy.clone();
-            trace!("  mv_oppo: {}", mv_oppo);
-            board_copy2.place(mv_oppo.i, mv_oppo.j, color.opposite());
+            trace!("{}  mv_oppo: {}", indent, mv_oppo);
+            board_copy2.place_pos2d(mv_oppo, color.opposite());
+            stat.nodes_viewed += 1;
 
             let oppo_score: i32;
 
             if recurse {
-                let best2 = find_best_move(&board_copy2, color, false);
+                let best2 = find_best_move(&board_copy2, color, level+1, false, stat);
                 oppo_score = match best2 {
                     Some(s) => s.1,
                     None => eval(&board_copy2, color)
@@ -37,15 +44,15 @@ pub fn find_best_move(board: &Board, color: Color, recurse: bool) -> Option<((us
                 oppo_score = eval(&board_copy2, color);
             }
 
-            trace!("  -> {}", oppo_score);
+            trace!("{}  -> {}", indent, oppo_score);
             if oppo_score < max_score {
-                trace!("  pruning!");
+                trace!("{}  pruning!", indent);
                 best_oppo_move = best_move;
                 break;
             }
             if oppo_score < min_score {
                 min_score = oppo_score;
-                best_oppo_move = Some(((mv_oppo.i, mv_oppo.j), oppo_score));
+                best_oppo_move = Some((mv_oppo, oppo_score));
             }
         }
 
@@ -54,12 +61,12 @@ pub fn find_best_move(board: &Board, color: Color, recurse: bool) -> Option<((us
             None => eval(&board_copy, color)
         };
 
-        info!("mv: {} -> {}", mv, score);
-        trace!("-> {}", score);
+        info!("{}mv: {} -> {}", indent, mv, score);
+        trace!("{}-> {}", indent, score);
         if score > max_score {
-            trace!("it's best: score = {:?}", score);
+            trace!("{}it's best: score = {:?}", indent, score);
             max_score = score;
-            best_move = Some(((mv.i, mv.j), max_score));
+            best_move = Some((mv, max_score));
         }
     }
     best_move
@@ -103,7 +110,7 @@ fn eval_corner(board: &Board, color: Color, corner: &Point, precorner1: &Point, 
 pub fn eval(board: &Board, color: Color) -> i32 {
     let occupied = board.num_occupied();
     let mut score: i32;
-    if occupied < 48 {
+    if occupied < 54 {
         score = 
             board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color)).count() as i32 -
             board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color.opposite())).count() as i32;
