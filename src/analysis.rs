@@ -6,28 +6,9 @@ use crate::board::Board;
 use log::{info, warn, trace, error, set_max_level};
 
 pub fn find_best_move(board: &Board, color: Color) -> Option<(usize, usize)> {
-    for i in 0..8 {
-        for j in 0..8 {
-            if board.can_place(i,j,color) {
-                return Some((i,j));
-            }
-        }
-    }
-    None
+    board.iter_pos2D().find(|p| board.can_place(p.ij().0, p.ij().1, color)).map(|p| p.ij())
 }
 
-pub fn caclulate_score(board: &Board) -> (i32, i32) {
-    let mut num_blacks = 0;
-    let mut num_whites = 0;
-    for i in 0..8 {
-        for j in 0..8 {
-            if board.get_at(i,j) == Color::Black {
-                num_blacks += 1;
-            }
-            if board.get_at(i,j) == Color::White {
-                num_whites += 1;
-            }
-        }
-    }
-    (num_blacks, num_whites)
+pub fn caclulate_score(board: &Board) -> (usize, usize) {
+    (board.num_of_color(Color::Black), board.num_of_color(Color::White))
 }

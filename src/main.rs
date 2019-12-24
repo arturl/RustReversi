@@ -39,7 +39,7 @@ fn main() {
     let mut color = Color::Black;
 
     loop {
-        println!("Score: {:?}", caclulate_score(&board));
+        println!("Score: {:?}/{}", caclulate_score(&board), board.num_occupied());
         if board.has_any_moves(color) {
             println!("Enter next move for {:?}:", color);
         }
@@ -63,6 +63,13 @@ fn main() {
                 println!("Computer picked {}{}", ((i as u8)+97) as char, j);
                 break;
             }
+
+            let for_black = board.iter_pos2D().filter(|p| board.can_place(p.ij().0, p.ij().1, color)).map(|p| p.ij());
+            print!("Hint: ");
+            for pat in for_black {
+                 print!("{}{} ", ((pat.0 as u8)+97) as char, pat.1);
+            }
+            println!();
 
             print!("> ");
             stdout().flush().unwrap();

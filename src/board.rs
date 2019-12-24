@@ -4,15 +4,98 @@ use crate::color::Color;
 
 use log::{info, warn, trace, error, set_max_level};
 
+pub struct Pos {
+    index: usize,
+}
+
+impl Pos {
+    fn new(i: usize) -> Pos {
+        Pos { index: i }
+    }
+
+    fn i(&self) -> usize {
+        self.index
+    }
+}
+
+impl Iterator for Pos {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.index += 1;
+
+        if self.index < 64 {
+            Some(self.index)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct Pos2D {
+    i: usize,
+    j: usize
+}
+
+impl Pos2D {
+    fn new(ii: usize, jj: usize) -> Pos2D {
+        Pos2D { i: ii, j: jj }
+    }
+
+    pub fn ij(&self) -> (usize, usize) {
+        (self.i, self.j)
+    }
+}
+
+impl Iterator for Pos2D {
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i < 7 {
+            self.i += 1;
+        }else{
+            if self.j < 7 {
+                self.i = 0;
+                self.j += 1;
+            }
+            else {
+                return None;
+            }
+        }
+        Some((self.i, self.j))
+    }
+}
+
 pub struct Board {
-    board: [[Color; 8]; 8],
+    board: [Color; 64]
 }
 
 impl Board {
     pub fn new() -> Board {
         Board {
-            board: [[Color::Empty; 8];8],
+            board: [Color::Empty; 64]
         }
+    }
+
+    pub fn num_occupied(&self) -> usize {
+        64-self.num_of_color(Color::Empty)
+    }
+
+    pub fn num_of_color(&self, color: Color) -> usize {
+        self.board.iter().filter(|x| **x == color).count()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Color> {
+        self.board.iter()
+    }
+
+    pub fn iter_pos(&self) -> impl Iterator<Item = Pos> + '_ {
+        self.board.iter().enumerate().map(|(x,y)| Pos::new(x))
+    }
+
+    #[allow(non_snake_case)]
+    pub fn iter_pos2D(&self) -> impl Iterator<Item = Pos2D> + '_ {
+        self.board.iter().enumerate().map(|(x,y)| Pos2D::new(x/8, x %8))
     }
 
     const DIRS:  [[i32;2]; 8] = [   [-1,-1],
@@ -26,12 +109,12 @@ impl Board {
 
     pub fn print(&self) {
         println!("      A     B     C     D     E     F     G     H");
-        println!("      0     1     2     3     4     5     6     7");
+        //println!("      0     1     2     3     4     5     6     7");
         println!("   |-----|-----|-----|-----|-----|-----|-----|-----");
         for i in 0..8 {
             print!("{}  |", i);
             for j in 0..8 {
-                print!("  {}  |", self.board[i][j]);
+                print!("  {}  |", self.get_at(j, i));
             }
             println!("");
             println!("   |-----|-----|-----|-----|-----|-----|-----|-----");
@@ -39,11 +122,19 @@ impl Board {
     }
 
     pub fn set_at(&mut self, i: usize, j: usize, color: Color) {
-        self.board[j][i] = color;
+        self.set_at_pos(Pos::new(j*8+i),color)
     }
 
     pub fn get_at(&self, i: usize, j: usize) -> Color {
-        self.board[j][i]
+        self.get_at_pos(Pos::new(j*8+i))
+    }
+
+    pub fn get_at_pos(&self, pos: Pos) -> Color {
+        self.board[pos.i()]
+    }
+
+    pub fn set_at_pos(&mut self, pos: Pos, color: Color) {
+        self.board[pos.i()] = color
     }
 
     pub fn set_at_c(&mut self, i: char, j: usize, color: Color) {
