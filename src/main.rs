@@ -12,6 +12,9 @@ use crate::color::Color;
 mod board;
 use crate::board::Board;
 
+mod analysis;
+use crate::analysis::*;
+
 use std::io::{self, Read};
 use std::io::stdout;
 use std::io::Write;
@@ -33,26 +36,10 @@ fn main() {
 
     board.print();
 
-    let mut vecb = Vec::new();
-    let mut vecw = Vec::new();
-    for i in 0..8 {
-        for j in 0..8 {
-            if board.can_place(i,j,Color::Black) {
-                vecb.push((i,j));
-            }
-            if board.can_place(i,j,Color::White) {
-                vecw.push((i,j));
-            }
-        }
-    }
-
-    // let b2 = board.can_place(3,2,Color::Black);
-    println!("for black: {:?}", vecb);
-    println!("for white: {:?}", vecw);
-
     let mut color = Color::Black;
 
     loop {
+        println!("Score: {:?}", caclulate_score(&board));
         if board.has_any_moves(color) {
             println!("Enter next move for {:?}:", color);
         }
@@ -68,6 +55,15 @@ fn main() {
             }
         }
         loop {
+
+            if color == Color::White {
+                let (i,j) = find_best_move(&board, color).unwrap();
+                board.place(i, j, color);
+                board.print();
+                println!("Computer picked {}{}", ((i as u8)+97) as char, j);
+                break;
+            }
+
             print!("> ");
             stdout().flush().unwrap();
             let mut input = String::new();
@@ -85,8 +81,6 @@ fn main() {
 
                 let xi = (x - 97) as usize;
                 let yi = (y - 48) as usize;
-
-                trace!("--> {} {}", xi, yi);
 
                 if board.can_place(xi,yi,color) {
                     board.place(xi,yi,color);
