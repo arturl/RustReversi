@@ -25,6 +25,7 @@ fn main() {
         .format_timestamp(None)
         .filter_module("reversi", log::LevelFilter::Info)
         .filter_module("reversi::board", log::LevelFilter::Info)
+        .filter_module("reversi::analysis", log::LevelFilter::Error)
         .init();
 
     let mut board = Board::new();
@@ -33,6 +34,17 @@ fn main() {
     board.set_at_c('D',4,Color::White);
     board.set_at_c('E',3,Color::White);
     board.set_at_c('E',4,Color::Black);
+
+    // board.set_at_c('c',3,Color::White);
+    // board.set_at_c('d',3,Color::White);
+    // board.set_at_c('e',3,Color::White);
+    // board.set_at_c('c',4,Color::White);
+    // board.set_at_c('d',4,Color::Black);
+    // board.set_at_c('e',4,Color::Black);
+    // board.set_at_c('b',5,Color::White);
+    // board.set_at_c('c',5,Color::Black);
+    // board.set_at_c('d',5,Color::Black);
+    // board.set_at_c('a',6,Color::White);
 
     board.print();
 
@@ -64,9 +76,9 @@ fn main() {
                 break;
             }
 
-            let for_black = board.iter_pos2D().filter(|p| board.can_place(p.ij().0, p.ij().1, color)).map(|p| p.ij());
+            let hints = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color)).map(|p| (p.i,p.j));
             print!("Hint: ");
-            for pat in for_black {
+            for pat in hints {
                  print!("{}{} ", ((pat.0 as u8)+97) as char, pat.1);
             }
             println!();

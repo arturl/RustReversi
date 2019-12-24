@@ -32,18 +32,15 @@ impl Iterator for Pos {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Pos2D {
-    i: usize,
-    j: usize
+    pub i: usize,
+    pub j: usize
 }
 
 impl Pos2D {
     fn new(ii: usize, jj: usize) -> Pos2D {
         Pos2D { i: ii, j: jj }
-    }
-
-    pub fn ij(&self) -> (usize, usize) {
-        (self.i, self.j)
     }
 }
 
@@ -66,6 +63,7 @@ impl Iterator for Pos2D {
     }
 }
 
+#[derive(Clone)]
 pub struct Board {
     board: [Color; 64]
 }
@@ -93,8 +91,8 @@ impl Board {
         self.board.iter().enumerate().map(|(x,y)| Pos::new(x))
     }
 
-    #[allow(non_snake_case)]
-    pub fn iter_pos2D(&self) -> impl Iterator<Item = Pos2D> + '_ {
+    //#[allow(non_snake_case)]
+    pub fn iter_pos2d(&self) -> impl Iterator<Item = Pos2D> + '_ {
         self.board.iter().enumerate().map(|(x,y)| Pos2D::new(x/8, x %8))
     }
 
@@ -141,6 +139,12 @@ impl Board {
         let lc = i.to_ascii_lowercase();
         let ii = (lc.to_digit(36).unwrap() - 10) as usize;
         self.set_at(ii,j,color);
+    }
+
+    pub fn get_at_c(&self, i: char, j: usize) -> Color {
+        let lc = i.to_ascii_lowercase();
+        let ii = (lc.to_digit(36).unwrap() - 10) as usize;
+        self.get_at(ii,j)
     }
 
     pub fn place(&mut self, i: usize, j: usize, color: Color) {
@@ -198,6 +202,10 @@ impl Board {
         } else {
             panic!("{:?} is not a valid position for {:?}", (i,j), color)
         }
+    }
+
+    pub fn can_place_pos2d(&self, pos: Pos2D, color: Color) -> bool {
+        self.can_place(pos.i, pos.j, color)
     }
 
     pub fn can_place(&self, i: usize, j: usize, color: Color) -> bool {
