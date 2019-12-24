@@ -5,43 +5,61 @@ use log::{info, warn, trace, error, set_max_level};
 use crate::color::Color;
 use crate::board::Board;
 
-pub fn find_best_move(board: &Board, color: Color) -> Option<(usize, usize)> {
+pub fn find_best_move(board: &Board, color: Color, recurse: bool) -> Option<((usize, usize), i32)> {
     let possible_moves = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color));
 
-    let mut best_score = -99999;
-    let mut best_move: Option<(usize, usize)> = None;
+    let mut max_score = -99999;
+    let mut best_move: Option<((usize, usize), i32)> = None;
     for mv in possible_moves {
         let mut board_copy = board.clone();
-        trace!("mv: {}{}", ((mv.i as u8)+97) as char, mv.j);
+        trace!("mv: {}", mv);
         board_copy.place(mv.i, mv.j, color);
 
         let possible_oppo_moves = board_copy.iter_pos2d().filter(|p| board_copy.can_place_pos2d(*p, color.opposite()));
 
-        let mut best_oppo_score = -99999;
-        let mut best_oppo_move: Option<(usize, usize)> = None;
+        let mut min_score = 99999;
+        let mut best_oppo_move: Option<((usize, usize), i32)> = None;
         for mv_oppo in possible_oppo_moves {
             let mut board_copy2 = board_copy.clone();
-            trace!("  mv_oppo: {}{}", ((mv_oppo.i as u8)+97) as char, mv_oppo.j);
+            trace!("  mv_oppo: {}", mv_oppo);
             board_copy2.place(mv_oppo.i, mv_oppo.j, color.opposite());
-            let oppo_score = eval(&board_copy2, color.opposite());
+
+            let oppo_score: i32;
+
+            if recurse {
+                let best2 = find_best_move(&board_copy2, color, false);
+                oppo_score = match best2 {
+                    Some(s) => s.1,
+                    None => eval(&board_copy2, color)
+                };
+            }
+            else {
+                oppo_score = eval(&board_copy2, color);
+            }
+
             trace!("  -> {}", oppo_score);
-            if oppo_score > best_oppo_score {
-                best_oppo_score = oppo_score;
-                best_oppo_move = Some((mv_oppo.i, mv_oppo.j));
+            if oppo_score < max_score {
+                trace!("  pruning!");
+                best_oppo_move = best_move;
+                break;
+            }
+            if oppo_score < min_score {
+                min_score = oppo_score;
+                best_oppo_move = Some(((mv_oppo.i, mv_oppo.j), oppo_score));
             }
         }
 
         let score = match best_oppo_move {
-            Some(_) => - best_oppo_score,
+            Some((_,s)) => s,
             None => eval(&board_copy, color)
         };
 
-        info!("mv: {}{} -> {}", ((mv.i as u8)+97) as char, mv.j, score);
+        info!("mv: {} -> {}", mv, score);
         trace!("-> {}", score);
-        if score > best_score {
+        if score > max_score {
             trace!("it's best: score = {:?}", score);
-            best_score = score;
-            best_move = Some((mv.i, mv.j));
+            max_score = score;
+            best_move = Some(((mv.i, mv.j), max_score));
         }
     }
     best_move

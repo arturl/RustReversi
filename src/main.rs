@@ -38,6 +38,15 @@ fn main() {
     // board.set_at_c('c',3,Color::White);
     // board.set_at_c('d',3,Color::White);
     // board.set_at_c('e',3,Color::White);
+    // board.set_at_c('c',4,Color::Black);
+    // board.set_at_c('d',4,Color::White);
+    // board.set_at_c('e',4,Color::Black);
+    // board.set_at_c('c',5,Color::Black);
+    // board.set_at_c('c',6,Color::Black);
+
+    // board.set_at_c('c',3,Color::White);
+    // board.set_at_c('d',3,Color::White);
+    // board.set_at_c('e',3,Color::White);
     // board.set_at_c('c',4,Color::White);
     // board.set_at_c('d',4,Color::Black);
     // board.set_at_c('e',4,Color::Black);
@@ -51,7 +60,8 @@ fn main() {
     let mut color = Color::Black;
 
     loop {
-        println!("Score: {:?}/{}", caclulate_score(&board), board.num_occupied());
+        let score = caclulate_score(&board);
+        println!("Score: Black:{}  White:{}  Total:{}", score.0, score.1, board.num_occupied());
         if board.has_any_moves(color) {
             println!("Enter next move for {:?}:", color);
         }
@@ -69,17 +79,17 @@ fn main() {
         loop {
 
             if color == Color::White {
-                let (i,j) = find_best_move(&board, color).unwrap();
+                let ((i,j),_) = find_best_move(&board, color, true).unwrap();
                 board.place(i, j, color);
                 board.print();
                 println!("Computer picked {}{}", ((i as u8)+97) as char, j);
                 break;
             }
 
-            let hints = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color)).map(|p| (p.i,p.j));
+            let hints = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color));
             print!("Hint: ");
             for pat in hints {
-                 print!("{}{} ", ((pat.0 as u8)+97) as char, pat.1);
+                 print!("{} ", pat);
             }
             println!();
 

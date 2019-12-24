@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::color::Color;
-
+use std::fmt;
 use log::{info, warn, trace, error, set_max_level};
 
 pub struct Pos {
@@ -41,6 +41,12 @@ pub struct Pos2D {
 impl Pos2D {
     fn new(ii: usize, jj: usize) -> Pos2D {
         Pos2D { i: ii, j: jj }
+    }
+}
+
+impl fmt::Display for Pos2D {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{}", ((self.i as u8)+97) as char, self.j )
     }
 }
 
