@@ -26,13 +26,13 @@ impl fmt::Display for Pos2D {
 
 #[derive(Clone)]
 pub struct Board {
-    board: [Color; 64]
+    board_data: [Color; 64]
 }
 
 impl Board {
     pub fn new() -> Board {
         Board {
-            board: [Color::Empty; 64]
+            board_data: [Color::Empty; 64]
         }
     }
 
@@ -41,12 +41,11 @@ impl Board {
     }
 
     pub fn num_of_color(&self, color: Color) -> usize {
-        self.board.iter().filter(|x| **x == color).count()
+        (0..64usize)
+            .map(|i| (i/8, i%8) )
+            .filter(|(i,j)| self.get_at(*i, *j) == color)
+            .count()
     }
-
-    // pub fn iter(&self) -> impl Iterator<Item = &Color> {
-    //     self.board.iter()
-    // }
 
     const DIRS:  [[i32;2]; 8] = [   [-1,-1],
                                     [-1, 0],
@@ -80,11 +79,11 @@ impl Board {
     }
 
     pub fn get_at_pos(&self, pos: usize) -> Color {
-        self.board[pos]
+        self.board_data[pos]
     }
 
     pub fn set_at_pos(&mut self, pos: usize, color: Color) {
-        self.board[pos] = color
+        self.board_data[pos] = color
     }
 
     pub fn set_at_c(&mut self, i: char, j: usize, color: Color) {
