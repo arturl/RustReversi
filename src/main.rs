@@ -30,7 +30,7 @@ fn main() {
     env_logger::builder()
         .format_timestamp(None)
         .filter_module("reversi", log::LevelFilter::Info)
-        .filter_module("reversi::board", log::LevelFilter::Info)
+        .filter_module("reversi::board", log::LevelFilter::Error)
         .filter_module("reversi::analysis", log::LevelFilter::Error)
         .filter_module("reversi::stat", log::LevelFilter::Error)
         .init();
@@ -71,7 +71,7 @@ fn main() {
 
             if color == Color::White {
                 let mut stat = Stat::new();
-                let (pos, score) = find_best_move(&board, color, 0, true, &mut stat).unwrap();
+                let (pos, score) = find_best_move(&board, color, 0, 3, &mut stat).unwrap();
                 board.place_pos2d(pos, color);
                 transcript.add(pos.i, pos.j);
                 board.print();
@@ -80,7 +80,7 @@ fn main() {
                 break;
             }
 
-            let hints = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color));
+            let hints = board.get_available_moves_for(color);
             println!("transcript: {}", transcript);
             print!("Hint: ");
             for pat in hints {

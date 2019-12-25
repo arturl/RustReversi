@@ -24,25 +24,6 @@ impl fmt::Display for Pos2D {
     }
 }
 
-impl Iterator for Pos2D {
-    type Item = (usize, usize);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.i < 7 {
-            self.i += 1;
-        }else{
-            if self.j < 7 {
-                self.i = 0;
-                self.j += 1;
-            }
-            else {
-                return None;
-            }
-        }
-        Some((self.i, self.j))
-    }
-}
-
 #[derive(Clone)]
 pub struct Board {
     board: [Color; 64]
@@ -63,21 +44,9 @@ impl Board {
         self.board.iter().filter(|x| **x == color).count()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Color> {
-        self.board.iter()
-    }
-
-    pub fn iter_pos2d(&self) -> impl Iterator<Item = Pos2D> + '_ {
-        self.board.iter().enumerate().map(|(x,y)| Pos2D::new(x/8, x %8))
-    }
-
-    pub fn replay_transcript(&mut self, transcript: &Transcript) {
-        let mut color = Color::Black;
-        for mv in transcript.moves.clone() {
-            self.place(mv.0, mv.1, color);
-            color = color.opposite();
-        }
-    }
+    // pub fn iter(&self) -> impl Iterator<Item = &Color> {
+    //     self.board.iter()
+    // }
 
     const DIRS:  [[i32;2]; 8] = [   [-1,-1],
                                     [-1, 0],
@@ -150,13 +119,12 @@ impl Board {
         for direction in &Board::DIRS {
             trace!("--> {:?}", direction);
             let mut flipped = 0;
-            let mut new_position = (i as i32, j as i32);
+            let mut new_position = Pos2D::new(i, j);
             loop {
-                new_position = (new_position.0 + direction[0], new_position.1 + direction[1]);
-                if new_position.0 >= 0 && new_position.0 < 8 && new_position.1 >= 0 && new_position.1 < 8 {
-                    let bounds_checked_position = (new_position.0 as usize, new_position.1 as usize);
-                    trace!("{:?}", bounds_checked_position);
-                    let color_at_this_position = self.get_at(bounds_checked_position.0, bounds_checked_position.1);
+                new_position.i = (new_position.i as i32 + direction[0]) as usize; 
+                new_position.j = (new_position.j as i32 + direction[1]) as usize;
+                if new_position.i < 8 && new_position.j < 8 {
+                    let color_at_this_position = self.get_at(new_position.i, new_position.j);
                     trace!("c: {:?}", color_at_this_position);
                     if color_at_this_position == opposite {
                         trace!("continue going in this direction");
@@ -187,7 +155,9 @@ impl Board {
         if total_flipped > 0 {
             self.set_at(i, j, color);
         } else {
-            panic!("{:?} is not a valid position for {:?}", (i,j), color)
+            let can = self.can_place(i, j, color);
+            self.print();
+            panic!("{:?} is not a valid position for {:?}, can=={}", (i,j), color, can)
         }
     }
 
@@ -204,18 +174,15 @@ impl Board {
 
         let opposite = color.opposite();
 
-        // Scan in 8 directions:
-
         for direction in &Board::DIRS {
             trace!("--> {:?}", direction);
             let mut flipped = 0;
-            let mut new_position = (i as i32, j as i32);
+            let mut new_position = Pos2D::new(i,j);
             loop {
-                new_position = (new_position.0 + direction[0], new_position.1 + direction[1]);
-                if new_position.0 >= 0 && new_position.0 < 8 && new_position.1 >= 0 && new_position.1 < 8 {
-                    let bounds_checked_position = (new_position.0 as usize, new_position.1 as usize);
-                    trace!("{:?}", bounds_checked_position);
-                    let color_at_this_position = self.get_at(bounds_checked_position.0, bounds_checked_position.1);
+                new_position.i = (new_position.i as i32 + direction[0]) as usize; 
+                new_position.j = (new_position.j as i32 + direction[1]) as usize;
+                if new_position.i < 8 && new_position.j < 8 {
+                    let color_at_this_position = self.get_at(new_position.i, new_position.j);
                     trace!("c: {:?}", color_at_this_position);
                     if color_at_this_position == opposite {
                         trace!("continue going in this direction");
@@ -239,13 +206,24 @@ impl Board {
     }
 
     pub fn has_any_moves(&self, color: Color) -> bool {
-        for i in 0..8 {
-            for j in 0..8 {
-                if self.can_place(i,j,color) {
-                    return true;
-                }
-            }
-        }
-        false
+        (0..64usize)
+            .map(|i| (i/8, i%8) )
+            .any(move |(i,j)| self.can_place(i, j, color))
     }
+
+    pub fn get_available_moves_for(&self, color: Color) -> impl Iterator<Item = Pos2D> + '_ {
+        (0..64usize)
+            .map(|i| (i/8, i%8) )
+            .filter(move |(i,j)| self.can_place(*i, *j, color))
+            .map(|(i,j)| Pos2D::new(i, j))
+    }
+
+    pub fn replay_transcript(&mut self, transcript: &Transcript) {
+        let mut color = Color::Black;
+        for mv in transcript.moves.clone() {
+            self.place(mv.0, mv.1, color);
+            color = color.opposite();
+        }
+    }
+
 }

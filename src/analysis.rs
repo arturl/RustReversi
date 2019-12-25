@@ -7,8 +7,8 @@ use crate::color::Color;
 use crate::board::*;
 use crate::stat::Stat;
 
-pub fn find_best_move(board: &Board, color: Color, level: i32, recurse: bool, stat: &mut Stat) -> Option<(Pos2D, i32)> {
-    let possible_moves = board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color));
+pub fn find_best_move(board: &Board, color: Color, level: i32, max_level: i32, stat: &mut Stat) -> Option<(Pos2D, i32)> {
+    let possible_moves = board.get_available_moves_for(color);
     let mut max_score = -99999;
     let mut best_move: Option<(Pos2D, i32)> = None;
     let mut indent = format!("[{}]", level);
@@ -21,7 +21,8 @@ pub fn find_best_move(board: &Board, color: Color, level: i32, recurse: bool, st
         board_copy.place(mv.i, mv.j, color);
         stat.nodes_viewed += 1;
 
-        let possible_oppo_moves = board_copy.iter_pos2d().filter(|p| board_copy.can_place_pos2d(*p, color.opposite()));
+        //let possible_oppo_moves = board_copy.iter_pos2d().filter(|p| board_copy.can_place_pos2d(*p, color.opposite()));
+        let possible_oppo_moves = board_copy.get_available_moves_for(color.opposite());
 
         let mut min_score = 99999;
         let mut best_oppo_move: Option<(Pos2D, i32)> = None;
@@ -33,8 +34,8 @@ pub fn find_best_move(board: &Board, color: Color, level: i32, recurse: bool, st
 
             let oppo_score: i32;
 
-            if recurse {
-                let best2 = find_best_move(&board_copy2, color, level+1, false, stat);
+            if max_level > level {
+                let best2 = find_best_move(&board_copy2, color, level+1, max_level, stat);
                 oppo_score = match best2 {
                     Some(s) => s.1,
                     None => eval(&board_copy2, color)
@@ -112,8 +113,8 @@ pub fn eval(board: &Board, color: Color) -> i32 {
     let mut score: i32;
     if occupied < 54 {
         score = 
-            board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color)).count() as i32 -
-            board.iter_pos2d().filter(|p| board.can_place_pos2d(*p, color.opposite())).count() as i32;
+            board.get_available_moves_for(color).count() as i32 -
+            board.get_available_moves_for(color.opposite()).count() as i32;
 
         // What matters at this stage is stable cells, plus minimizing number of opponent moves
         score += eval_corner(board, color, &Point{i: 'a', j: 0},
