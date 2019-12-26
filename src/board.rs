@@ -4,6 +4,7 @@ use crate::color::Color;
 use crate::stat::*;
 use crate::transcript::*;
 use std::fmt;
+use std::mem;
 use log::{info, warn, trace, error, set_max_level};
 
 #[derive(Clone, Copy)]
@@ -78,24 +79,31 @@ impl Board {
         self.get_at_pos(j*8+i)
     }
 
-    pub fn get_at_pos(&self, pos: usize) -> Color {
+    fn get_at_pos(&self, pos: usize) -> Color {
+        // turning off bounds checking appears to have no impact on speed
+        // unsafe {
+        //     *self.board_data.get_unchecked(pos)
+        // }
         self.board_data[pos]
     }
 
-    pub fn set_at_pos(&mut self, pos: usize, color: Color) {
+    fn set_at_pos(&mut self, pos: usize, color: Color) {
+        // unsafe {
+        //     *self.board_data.get_unchecked_mut(pos) = color
+        // }
         self.board_data[pos] = color
     }
 
+    fn char_to_index(c: char) -> usize {
+        (c.to_ascii_lowercase() as i8 - 97) as usize
+    }
+
     pub fn set_at_c(&mut self, i: char, j: usize, color: Color) {
-        let lc = i.to_ascii_lowercase();
-        let ii = (lc.to_digit(36).unwrap() - 10) as usize;
-        self.set_at(ii,j,color);
+        self.set_at(Board::char_to_index(i),j,color);
     }
 
     pub fn get_at_c(&self, i: char, j: usize) -> Color {
-        let lc = i.to_ascii_lowercase();
-        let ii = (lc.to_digit(36).unwrap() - 10) as usize;
-        self.get_at(ii,j)
+        self.get_at(Board::char_to_index(i),j)
     }
 
     pub fn place_pos2d(&mut self, pos: Pos2D, color: Color) {
