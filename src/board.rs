@@ -47,25 +47,31 @@ impl Board {
         64 - self.num_of_color(Color::Empty)
     }
 
-    fn get_positions(&self, color: Color) -> impl Iterator<Item = Pos2D> {
+    fn get_positions(&self) -> impl Iterator<Item = Pos2D> {
         (0..64usize)
             .map(|i| Pos2D::new(i / 8, i % 8))
     }
 
     pub fn num_of_color(&self, color: Color) -> usize {
-        self.get_positions(color)
+        self.get_positions()
             .filter(|p| self.get_at(*p) == color)
             .count()
     }
 
     pub fn has_any_moves(&self, color: Color) -> bool {
-        self.get_positions(color)
-            .any(move |p| self.can_place(p, color))
+        self.get_positions()
+            .any(|p| self.can_place(p, color))
     }
 
     pub fn get_available_moves_for(&self, color: Color) -> impl Iterator<Item = Pos2D> + '_ {
-        self.get_positions(color)
+        self.get_positions()
             .filter(move |p| self.can_place(*p, color))
+    }
+
+    pub fn count_available_moves(&self, color1: Color, color2: Color) -> (i32, i32) {
+        self.get_positions()
+            .map(|p| (if self.can_place(p, color1) { 1 } else { 0 }, if self.can_place(p, color2) { 1 } else { 0 }))
+            .fold((0,0), |acc, x| (acc.0 + x.0, acc.1 + x.1))
     }
 
     const DIRS: [[i32; 2]; 8] = [
@@ -126,7 +132,6 @@ impl Board {
 
     pub fn place(&mut self, position: Pos2D, color: Color) {
         if self.get_at(position) != Color::Empty {
-        //if !self.can_place(position, color) {
              panic!("Cannot place to non-empty cell");
         }
         let mut total_flipped = 0;
@@ -138,7 +143,7 @@ impl Board {
                 new_position.i = (new_position.i as i32 + direction[0]) as usize;
                 new_position.j = (new_position.j as i32 + direction[1]) as usize;
                 if new_position.i < 8 && new_position.j < 8 {
-                    let color_at_this_position = self.get_at(Pos2D::new(new_position.i, new_position.j));
+                    let color_at_this_position = self.get_at(new_position);
                     if color_at_this_position == opposite {
                         flipped += 1;
                     } else {
@@ -170,8 +175,8 @@ impl Board {
             let can = self.can_place(position, color);
             self.print();
             panic!(
-                "{:?} is not a valid position for ({}{}), can=={}",
-                position.i, position.j,
+                "{} is not a valid position for {:?}. Can=={}",
+                position,
                 color,
                 can
             )
@@ -207,11 +212,12 @@ impl Board {
         false
     }
 
-    pub fn replay_transcript(&mut self, transcript: &Transcript) {
-        let mut color = Color::Black;
+    pub fn replay_transcript(&mut self, transcript: &Transcript) -> Color {
+        let mut last_mover = Color::White; // ??
         for mv in transcript.moves.clone() {
-            self.place(mv, color);
-            color = color.opposite();
+            self.place(mv.1, mv.0);
+            last_mover = mv.0;
         }
+        last_mover
     }
 }

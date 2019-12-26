@@ -41,16 +41,17 @@ fn main() {
     board.set_at_c('E', 3, Color::White);
     board.set_at_c('E', 4, Color::Black);
 
-    //let mut transcript = Transcript::new();
-    let mut transcript = Transcript::from_trace("c4c3c2b3a4d5f3b2c5a3a2d2e2d1c0c1d0f4f5e1e5e0f0f1f2g2h2f6f7g3h3g4h4c6c7h5");
-    //let mut transcript = Transcript::from_trace("c4e5f2c3e6d2b3f6g7d5c5d6c6d7c2f7");
-    board.replay_transcript(&transcript);
+    let board_orig = Board::new_from(&board);
+
+    let mut transcript = Transcript::new();
+    //let mut transcript = Transcript::  from_trace("bc4wc3bc2wb3ba4wd5bf3wb2bc5wa3ba2wd2be2wd1bc0wc1bd0wf4bf5we1be5we0bf0wf1bf2wg2bh2wf6bf7wg3bh3wg4bh4wc6bc7wh5be6wh1bg5wd6bd7wh6bg1");
+    //let mut transcript = Transcript::from_trace("bc4wc3");
+    let mut color = board.replay_transcript(&transcript).opposite();
 
     board.print();
 
-    let mut color = Color::Black;
-
     loop {
+        println!("transcript: {}", transcript);
         let score = caclulate_score(&board);
         println!(
             "Score: Black:{}  White:{}  Total:{}",
@@ -59,7 +60,7 @@ fn main() {
             board.num_occupied()
         );
         if board.has_any_moves(color) {
-            println!("Enter next move for {:?}:", color);
+            println!("{:?} moves next", color);
         } else {
             println!("{:?} has no more moves", color);
             color = color.opposite();
@@ -73,9 +74,9 @@ fn main() {
         loop {
             if color == Color::White {
                 let mut stat = Stat::new();
-                let (pos, score) = find_best_move(&board, color, 0, 3, &mut stat).unwrap();
+                let (pos, score) = find_best_move(&board, color, 0, 4, &mut stat).unwrap();
                 board.place(pos, color);
-                transcript.add(pos);
+                transcript.add(pos, color);
                 board.print();
                 let elapsed = stat.start.elapsed();
                 println!(
@@ -95,11 +96,12 @@ fn main() {
             }
 
             let hints = board.get_available_moves_for(color);
-            println!("transcript: {}", transcript);
-            print!("Hint: ");
+            print!("Options: ");
             for pat in hints {
                 print!("{} ", pat);
             }
+            let (pos, score) = find_best_move(&board, color, 0, 2, &mut Stat::new()).unwrap();
+            print!(". Hint: {} (score: {})", pos, score);
             println!();
 
             print!("> ");
@@ -108,9 +110,15 @@ fn main() {
             let stdin = io::stdin();
             io::stdin().read_line(&mut input).unwrap();
             let input = input.trim().to_lowercase();
-            println!("you said '{}'", input);
             if input == "q" {
                 return;
+            }
+            else if input == "back" {
+                board = Board::new_from(&board_orig);
+                transcript.back();
+                color = board.replay_transcript(&transcript);
+                board.print();
+                break;
             }
             let coords = input.as_bytes();
             if coords.len() == 2 {
@@ -119,7 +127,7 @@ fn main() {
                 let position = Pos2D::new(xi, yi);
                 if board.can_place(position, color) {
                     board.place(position, color);
-                    transcript.add(position);
+                    transcript.add(position, color);
                     board.print();
                     break;
                 }

@@ -33,16 +33,17 @@ pub fn find_best_move(
 
             let oppo_score: i32;
 
-            if max_level > level {
+            if level < max_level {
                 let best2 = find_best_move(&board_copy2, color, level + 1, max_level, stat);
                 oppo_score = match best2 {
                     Some(s) => s.1,
-                    None => eval(&board_copy2, color),
+                    None => eval(&board_copy2, color, max_level),
                 };
             } else {
-                oppo_score = eval(&board_copy2, color);
+                oppo_score = eval(&board_copy2, color, max_level);
             }
 
+            // Alpha-beta pruning
             if oppo_score < max_score {
                 best_oppo_move = best_move;
                 break;
@@ -55,7 +56,7 @@ pub fn find_best_move(
 
         let score = match best_oppo_move {
             Some((_, s)) => s,
-            None => eval(&board_copy, color),
+            None => eval(&board_copy, color, max_level),
         };
 
         if score > max_score {
@@ -73,94 +74,128 @@ pub fn caclulate_score(board: &Board) -> (usize, usize) {
     )
 }
 
-fn eval_corner_worker(
-    board: &Board,
-    color: Color,
-    corner: Pos2D,
-    precorner1: Pos2D,
-    precorner2: Pos2D,
-    badprecorner: Pos2D,
-) -> i32 {
-    let mut score: i32 = 0;
-    if board.get_at(corner) == color {
-        score += 100;
-        if board.get_at(precorner1) == color {
-            score += 50;
-        }
-        if board.get_at(precorner2) == color {
-            score += 50;
-        }
-    } else {
-        // Bad pre-corner
-        if board.get_at(badprecorner) == color {
-            score -= 100;
-        }
-    }
-    score
-}
-
-fn eval_corner(
-    board: &Board,
-    color: Color,
-    corner: Pos2D,
-    precorner1: Pos2D,
-    precorner2: Pos2D,
-    badprecorner: Pos2D,
-) -> i32 {
-    eval_corner_worker(board, color, corner, precorner1, precorner2, badprecorner)
-        - eval_corner_worker(
-            board,
-            color.opposite(),
-            corner,
-            precorner1,
-            precorner2,
-            badprecorner,
-        )
-}
-
-pub fn eval(board: &Board, color: Color) -> i32 {
+pub fn eval(board: &Board, color: Color, level: i32) -> i32 {
     let occupied = board.num_occupied();
     let mut score: i32;
-    if occupied < 54 {
-        score = board.get_available_moves_for(color).count() as i32
-            - board.get_available_moves_for(color.opposite()).count() as i32;
+    if occupied < (64 - 2*level) as usize {
 
         // What matters at this stage is stable cells, plus minimizing number of opponent moves
-        score += eval_corner(
-            board,
-            color,
-            Pos2D::new(0,0),
-            Pos2D::new(1,0),
-            Pos2D::new(0,1),
-            Pos2D::new(1,1),
-        );
 
-        score += eval_corner(
-            board,
-            color,
-            Pos2D::new(7,0),
-            Pos2D::new(7,1),
-            Pos2D::new(6,0),
-            Pos2D::new(6,1),
-        );
+        score =   board.get_available_moves_for(color).count() as i32
+                - board.get_available_moves_for(color.opposite()).count() as i32;
 
-        score += eval_corner(
-            board,
-            color,
-            Pos2D::new(7,7),
-            Pos2D::new(7,6),
-            Pos2D::new(6,7),
-            Pos2D::new(6,6),
-        );
+        let corner0 = board.get_at(Pos2D::new(0,0));
+        if corner0 == color {
+            score += 100;
+            if board.get_at(Pos2D::new(1,0)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(2,0)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(3,0)) == color {
+                        score += 50;
+                    }
+                }
+            }
+            if board.get_at(Pos2D::new(0,1)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(0,2)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(0,3)) == color {
+                        score += 50;
+                    }
+                }
+            }
+        }
+        else if corner0 == Color::Empty {
+            if board.get_at(Pos2D::new(1,1)) == color {
+                score -= 100;
+            }
+        }
 
-        score += eval_corner(
-            board,
-            color,
-            Pos2D::new(0,7),
-            Pos2D::new(0,6),
-            Pos2D::new(1,7),
-            Pos2D::new(1,6),
-        );
+        let corner1 = board.get_at(Pos2D::new(7,0));
+        if corner1 == color {
+            score += 100;
+            if board.get_at(Pos2D::new(6,0)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(5,0)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(4,0)) == color {
+                        score += 50;
+                    }
+                }
+            }
+            if board.get_at(Pos2D::new(7,1)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(7,2)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(7,3)) == color {
+                        score += 50;
+                    }
+                }
+            }
+        }
+        else if corner1 == Color::Empty {
+            if board.get_at(Pos2D::new(6,1)) == color {
+                score -= 100;
+            }
+        }
+
+        let corner2 = board.get_at(Pos2D::new(0,7));
+        if corner2 == color {
+            score += 100;
+            if board.get_at(Pos2D::new(1,7)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(2,7)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(3,7)) == color {
+                        score += 50;
+                    }
+                }
+            }
+            if board.get_at(Pos2D::new(0,6)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(0,5)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(0,4)) == color {
+                        score += 50;
+                    }
+                }
+            }
+        }
+        else if corner2 == Color::Empty {
+            if board.get_at(Pos2D::new(1,6)) == color {
+                score -= 100;
+            }
+        }
+
+        let corner3 = board.get_at(Pos2D::new(7,7));
+        if corner3 == color {
+            score += 100;
+            if board.get_at(Pos2D::new(6,7)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(5,7)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(4,7)) == color {
+                        score += 50;
+                    }
+                }
+            }
+            if board.get_at(Pos2D::new(7,6)) == color {
+                score += 50;
+                if board.get_at(Pos2D::new(7,5)) == color {
+                    score += 50;
+                    if board.get_at(Pos2D::new(7,4)) == color {
+                        score += 50;
+                    }
+                }
+            }
+        }
+        else if corner3 == Color::Empty {
+            if board.get_at(Pos2D::new(6,6)) == color {
+                score -= 100;
+            }
+        }
+
     } else {
         score = board.num_of_color(color) as i32 - board.num_of_color(color.opposite()) as i32;
     }
