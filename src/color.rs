@@ -6,16 +6,16 @@ use std::fmt;
 pub enum Color {
     Empty,
     Black,
-    White
+    White,
 }
 
-fn color_short_name(color : Color) -> String
-{
+fn color_short_name(color: Color) -> String {
     match color {
-            Color::Empty => " ",
-            Color::Black => "B",
-            Color::White => "W",
-        }.to_string()
+        Color::Empty => " ",
+        Color::Black => "B",
+        Color::White => "W",
+    }
+    .to_string()
 }
 
 impl fmt::Display for Color {
@@ -25,21 +25,18 @@ impl fmt::Display for Color {
 }
 
 impl Color {
-    pub fn is_empty(&self) -> bool
-    {
+    pub fn is_empty(&self) -> bool {
         match self {
-                Color::Empty => true,
-                _ => false
-            }
+            Color::Empty => true,
+            _ => false,
+        }
     }
 
-    pub fn opposite(&self) -> Color
-    {
+    pub fn opposite(&self) -> Color {
         match self {
             Color::Black => Color::White,
             Color::White => Color::Black,
-            _ => panic!("cannot have opposite of empty")
-            }
+            _ => panic!("cannot have opposite of empty"),
+        }
     }
-
 }

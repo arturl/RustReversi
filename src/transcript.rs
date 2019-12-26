@@ -1,17 +1,16 @@
 #![allow(dead_code)]
 
-use log::{info, warn, trace, error, set_max_level};
+use log::{error, info, set_max_level, trace, warn};
 use std::fmt;
+use crate::board::*;
 
 pub struct Transcript {
-    pub moves: Vec<(usize,usize)>
+    pub moves: Vec<Pos2D>,
 }
 
 impl Transcript {
     pub fn new() -> Transcript {
-        Transcript { 
-            moves: vec![]
-        }
+        Transcript { moves: vec![] }
     }
 
     pub fn from_trace(trace: &str) -> Transcript {
@@ -28,7 +27,7 @@ impl Transcript {
             let j = (chj as usize) - 48;
             trace!("Mapped {},{} -> {},{}", chi, chj, i, j);
 
-            t.add(i,j);
+            t.add(Pos2D::new(i, j));
             if index == bytes.len() {
                 break;
             }
@@ -36,19 +35,18 @@ impl Transcript {
         t
     }
 
-    pub fn add(&mut self, i: usize, j: usize) {
-        self.moves.push((i,j))
+    pub fn add(&mut self, position: Pos2D) {
+        self.moves.push(position)
     }
-
 }
 
 impl fmt::Display for Transcript {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut output = String::from("");
-        for (i,j) in self.moves.clone() {
-            output.push(((i as u8)+97) as char);
-            output.push_str(&j.to_string());
+        for p in self.moves.clone() {
+            output.push(((p.i as u8) + 97) as char);
+            output.push_str(&p.j.to_string());
         }
-        write!(f, "{}", output )
+        write!(f, "{}", output)
     }
 }
