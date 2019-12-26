@@ -7,7 +7,6 @@ pub enum Color {
     Empty,
     Black,
     White,
-    Shadow
 }
 
 fn color_short_name(color: Color) -> String {
@@ -15,7 +14,6 @@ fn color_short_name(color: Color) -> String {
         Color::Empty => " ",
         Color::Black => "B",
         Color::White => "W",
-        Color::Shadow => "."
     }
     .to_string()
 }
