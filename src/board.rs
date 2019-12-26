@@ -30,6 +30,8 @@ pub struct Board {
     board_data: [Color; 64],
 }
 
+const USE_SHADOWS: bool = false;
+
 impl Board {
     pub fn new() -> Board {
         Board {
@@ -44,7 +46,7 @@ impl Board {
     }
 
     pub fn num_occupied(&self) -> usize {
-        64 - self.num_of_color(Color::Empty)
+        self.num_of_color(Color::Black) + self.num_of_color(Color::White)
     }
 
     fn get_positions(&self) -> impl Iterator<Item = Pos2D> {
@@ -99,12 +101,63 @@ impl Board {
         }
     }
 
+    fn get_index_from_ij(i: usize, j: usize) -> usize {
+        j * 8 + i
+    }
+
+    fn set_shadow_at(&mut self, i: usize, j: usize) {
+        self.set_at_pos_internal(Board::get_index_from_ij(i,j), Color::Shadow);
+    }
+
+    fn if_empty_set_shadow_at(&mut self, i: usize, j: usize) {
+        if self.get_at(Pos2D::new(i,j)) == Color::Empty {
+            self.set_at_pos_internal(Board::get_index_from_ij(i,j), Color::Shadow);
+        }
+    }
+
+    fn if_empty_set_shadow_at_with_bcheck(&mut self, i: usize, j: usize) {
+        if i < 8 && j < 8 && self.get_at(Pos2D::new(i,j)) == Color::Empty {
+            self.set_at_pos_internal(Board::get_index_from_ij(i,j), Color::Shadow);
+        }
+    }
+
     pub fn set_at(&mut self, p: Pos2D, color: Color) {
-        self.set_at_pos_internal(p.j * 8 + p.i, color)
+        //println!("---- {}, '{}'", p, color);
+        self.set_at_pos_internal(Board::get_index_from_ij(p.i,p.j), color);
+        if USE_SHADOWS {
+            // self.if_empty_set_shadow_at_with_bcheck(p.i-1,p.j-1);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i-1,p.j);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i-1,p.j+1);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i,p.j-1);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i,p.j+1);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i+1,p.j-1);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i+1,p.j);
+            // self.if_empty_set_shadow_at_with_bcheck(p.i+1,p.j+1);
+            if p.j > 0 {
+                self.if_empty_set_shadow_at(p.i, p.j-1);
+                if p.i > 0 {
+                    self.if_empty_set_shadow_at(p.i-1, p.j-1);
+                }
+                if p.i < 7 {
+                    self.if_empty_set_shadow_at(p.i+1, p.j-1);
+                }
+            }
+            if p.j < 7 {
+                self.if_empty_set_shadow_at(p.i, p.j+1);
+                if p.i > 0 {
+                    self.if_empty_set_shadow_at(p.i-1, p.j+1);
+                }
+                if p.i < 7 {
+                    self.if_empty_set_shadow_at(p.i+1, p.j+1);
+                }
+            }
+            if p.i > 0 { self.if_empty_set_shadow_at(p.i-1, p.j) }
+            if p.i < 7 { self.if_empty_set_shadow_at(p.i+1, p.j) }
+        }
     }
 
     pub fn get_at(&self, p: Pos2D) -> Color {
-        self.get_at_pos_internal(p.j * 8 + p.i)
+        self.get_at_pos_internal(Board::get_index_from_ij(p.i,p.j))
     }
 
     fn get_at_pos_internal(&self, index: usize) -> Color {
@@ -130,8 +183,30 @@ impl Board {
         self.set_at(Pos2D::new(Board::char_to_index(i), j), color);
     }
 
+    pub fn is_unoccupied(color: Color) -> bool {
+        if USE_SHADOWS {
+            color == Color::Shadow || color == Color::Empty
+        }
+        else {
+            color == Color::Empty
+        }
+    }
+
+    pub fn is_candidate_color(color: Color) -> bool {
+        if USE_SHADOWS {
+            color == Color::Shadow
+        }
+        else {
+            color == Color::Empty
+        }
+    }
+
+    fn is_candidate(&self, position: Pos2D) -> bool {
+        Board::is_candidate_color(self.get_at(position))
+    }
+
     pub fn place(&mut self, position: Pos2D, color: Color) {
-        if self.get_at(position) != Color::Empty {
+        if !self.is_candidate(position) {
              panic!("Cannot place to non-empty cell");
         }
         let mut total_flipped = 0;
@@ -184,7 +259,7 @@ impl Board {
     }
 
     pub fn can_place(&self, position: Pos2D, color: Color) -> bool {
-        if self.get_at(position) != Color::Empty {
+        if !self.is_candidate(position) {
             return false;
         }
         let opposite = color.opposite();

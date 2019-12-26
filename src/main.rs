@@ -44,7 +44,7 @@ fn main() {
     let board_orig = Board::new_from(&board);
 
     let mut transcript = Transcript::new();
-    //let mut transcript = Transcript::  from_trace("bc4wc3bc2wb3ba4wd5bf3wb2bc5wa3ba2wd2be2wd1bc0wc1bd0wf4bf5we1be5we0bf0wf1bf2wg2bh2wf6bf7wg3bh3wg4bh4wc6bc7wh5be6wh1bg5wd6bd7wh6bg1");
+    let mut transcript = Transcript::  from_trace("bc4wc3bc2wb3ba4wd5bf3wb2bc5wa3ba2wd2be2wd1bc0wc1bd0wf4bf5we1be5we0bf0wf1bf2wg2bh2wf6bf7wg3bh3wg4bh4wc6bc7wh5be6wh1bg5wd6bd7wh6bg1");
     //let mut transcript = Transcript::from_trace("bc4wc3");
     let mut color = board.replay_transcript(&transcript).opposite();
 
@@ -100,8 +100,8 @@ fn main() {
             for pat in hints {
                 print!("{} ", pat);
             }
-            let (pos, score) = find_best_move(&board, color, 0, 2, &mut Stat::new()).unwrap();
-            print!(". Hint: {} (score: {})", pos, score);
+//            let (pos, score) = find_best_move(&board, color, 0, 2, &mut Stat::new()).unwrap();
+//            print!(". Hint: {} (score: {})", pos, score);
             println!();
 
             print!("> ");

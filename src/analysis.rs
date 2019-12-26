@@ -14,10 +14,12 @@ pub fn find_best_move(
     max_level: i32,
     stat: &mut Stat) -> Option<(Pos2D, i32)> {
     let possible_moves = board.get_available_moves_for(color);
+
     let mut max_score = std::i32::MIN;
     let mut best_move: Option<(Pos2D, i32)> = None;
 
     for mv in possible_moves {
+        //println!("{}>{}", level, mv);
         let mut board_copy = Board::new_from(board);
         board_copy.place(mv, color);
         stat.nodes_viewed += 1;
@@ -27,6 +29,7 @@ pub fn find_best_move(
         let mut min_score = std::i32::MAX;
         let mut best_oppo_move: Option<(Pos2D, i32)> = None;
         for mv_oppo in possible_oppo_moves {
+            //println!("{}>{}", level, mv_oppo);
             let mut board_copy2 = Board::new_from(&board_copy);
             board_copy2.place(mv_oppo, color.opposite());
             stat.nodes_viewed += 1;
@@ -106,7 +109,7 @@ pub fn eval(board: &Board, color: Color, level: i32) -> i32 {
                 }
             }
         }
-        else if corner0 == Color::Empty {
+        else if Board::is_unoccupied(corner0) {
             if board.get_at(Pos2D::new(1,1)) == color {
                 score -= 100;
             }
@@ -134,7 +137,7 @@ pub fn eval(board: &Board, color: Color, level: i32) -> i32 {
                 }
             }
         }
-        else if corner1 == Color::Empty {
+        else if Board::is_unoccupied(corner1) {
             if board.get_at(Pos2D::new(6,1)) == color {
                 score -= 100;
             }
@@ -162,7 +165,7 @@ pub fn eval(board: &Board, color: Color, level: i32) -> i32 {
                 }
             }
         }
-        else if corner2 == Color::Empty {
+        else if Board::is_unoccupied(corner2) {
             if board.get_at(Pos2D::new(1,6)) == color {
                 score -= 100;
             }
@@ -190,7 +193,7 @@ pub fn eval(board: &Board, color: Color, level: i32) -> i32 {
                 }
             }
         }
-        else if corner3 == Color::Empty {
+        else if Board::is_unoccupied(corner3) {
             if board.get_at(Pos2D::new(6,6)) == color {
                 score -= 100;
             }
