@@ -21,6 +21,9 @@ use crate::stat::*;
 mod transcript;
 use crate::transcript::*;
 
+mod board_tests;
+mod analysis_tests;
+
 use std::io::stdout;
 use std::io::Write;
 use std::io::{self, Read};

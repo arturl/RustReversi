@@ -7,7 +7,7 @@ use log::{error, info, set_max_level, trace, warn};
 use std::fmt;
 use std::mem;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Pos2D {
     pub i: usize,
     pub j: usize,
@@ -22,6 +22,12 @@ impl Pos2D {
 impl fmt::Display for Pos2D {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}{}", ((self.i as u8) + 97) as char, self.j)
+    }
+}
+
+impl PartialEq for Pos2D {
+    fn eq(&self, other: &Self) -> bool {
+        (self.i == other.i) && (self.j == other.j)
     }
 }
 
@@ -99,6 +105,18 @@ impl Board {
         }
     }
 
+    fn char_to_index(c: char) -> usize {
+        (c.to_ascii_lowercase() as i8 - 97) as usize
+    }
+
+    pub fn get_at_c(&self, i: char, j: usize) -> Color {
+        self.get_at(Pos2D::new(Board::char_to_index(i), j))
+    }
+
+    pub fn set_at_c(&mut self, i: char, j: usize, color: Color) {
+        self.set_at(Pos2D::new(Board::char_to_index(i), j), color)
+    }
+
     pub fn set_at(&mut self, p: Pos2D, color: Color) {
         self.set_at_pos_internal(p.j * 8 + p.i, color)
     }
@@ -120,14 +138,6 @@ impl Board {
         //     *self.board_data.get_unchecked_mut(index) = color
         // }
         self.board_data[index] = color
-    }
-
-    fn char_to_index(c: char) -> usize {
-        (c.to_ascii_lowercase() as i8 - 97) as usize
-    }
-
-    pub fn set_at_c(&mut self, i: char, j: usize, color: Color) {
-        self.set_at(Pos2D::new(Board::char_to_index(i), j), color);
     }
 
     pub fn place(&mut self, position: Pos2D, color: Color) {
