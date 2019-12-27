@@ -44,7 +44,7 @@ pub fn find_best_move(
             }
 
             // Alpha-beta pruning
-            if oppo_score < max_score {
+            if oppo_score <= max_score {
                 best_oppo_move = best_move;
                 break;
             }
