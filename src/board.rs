@@ -53,8 +53,28 @@ impl Board {
         64 - self.num_of_color(Color::Empty)
     }
 
+    const POSITIONS_NORM : [usize; 64] = [ 0, 1, 2, 3, 4, 5, 6, 7,
+                                           8, 9,10,11,12,13,14,15,
+                                          16,17,18,19,20,21,22,23,
+                                          24,25,26,27,28,29,30,31,
+                                          32,33,34,35,36,37,38,39,
+                                          40,41,42,43,44,45,46,47,
+                                          48,49,50,51,52,53,54,55,
+                                          56,57,58,59,60,61,62,63 ];
+
+    // This order is optimized for alpha-beta: moves that tend to be better
+    // (such as corners) are considered first
+    const POSITIONS_OPT : [usize; 60] =  [    0, 7,56,63, 2, 5,16,23,
+                                             40,47,58,61, 1, 3, 4, 6,
+                                              8,10,11,12,13,15,17,18,
+                                             19,20,21,22,24,25,26,29,
+                                             30,31,32,33,34,37,38,39,
+                                             41,42,43,44,45,46,48,50,
+                                             51,52,53,55,57,59,60,62,
+                                             9,14,49,54];
+
     fn get_positions(&self) -> impl Iterator<Item = Pos2D> {
-        (0..64usize)
+        Board::POSITIONS_OPT.iter()
             .map(|i| Pos2D::new(i / 8, i % 8))
     }
 
