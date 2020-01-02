@@ -24,10 +24,16 @@ mod test {
         assert_eq!(moves.iter().count(), 1);
 
         let mut stat = Stat::new();
-        let (pos, score) = find_best_move(&b, Color::White, 0, 1, &mut stat).unwrap();
+        let (pos, score) = negamax(&b, Color::White, 1, 54, &mut stat).unwrap();
 
         assert_eq!(pos, Pos2D::new(1,1));
         all_asserts::assert_lt!(score, 0);
+
+        // Now apply final disk count
+        let (pos, score) = negamax(&b, Color::White, 1, 1, &mut stat).unwrap();
+
+        assert_eq!(pos, Pos2D::new(1,1));
+        assert_eq!(score, 4);
     }
 
     fn get_starting_board_corner() -> Board {
@@ -45,10 +51,10 @@ mod test {
         assert_eq!(moves.iter().count(), 1);
 
         let mut stat = Stat::new();
-        let (pos, score) = find_best_move(&b, Color::White, 0, 1, &mut stat).unwrap();
+        let (pos, score) = negamax(&b, Color::White, 1, 54, &mut stat).unwrap();
 
         assert_eq!(pos, Pos2D::new(7,7));
-        all_asserts::assert_gt!(score, 0);
+        all_asserts::assert_gt!(score, 100); // one corner is taken, so at least 100
     }
 
     fn get_starting_board_corner2() -> Board {
@@ -69,7 +75,7 @@ mod test {
         assert_eq!(moves.iter().count(), 2);
 
         let mut stat = Stat::new();
-        let (pos, score) = find_best_move(&b, Color::White, 0, 0, &mut stat).unwrap();
+        let (pos, score) = negamax(&b, Color::White, 1, 54, &mut stat).unwrap();
 
         assert_eq!(pos, Pos2D::new(7,7));
         all_asserts::assert_gt!(score, 0); // must be slightly better

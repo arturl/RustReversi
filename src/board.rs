@@ -73,29 +73,34 @@ impl Board {
                                              51,52,53,55,57,59,60,62,
                                              9,14,49,54];
 
-    fn get_positions(&self) -> impl Iterator<Item = Pos2D> {
+    fn get_possibly_available_positions(&self) -> impl Iterator<Item = Pos2D> {
         Board::POSITIONS_OPT.iter()
             .map(|i| Pos2D::new(i / 8, i % 8))
     }
 
+    fn get_all_positions(&self) -> impl Iterator<Item = Pos2D> {
+        Board::POSITIONS_NORM.iter()
+            .map(|i| Pos2D::new(i / 8, i % 8))
+    }
+
     pub fn num_of_color(&self, color: Color) -> usize {
-        self.get_positions()
+        self.get_all_positions()
             .filter(|p| self.get_at(*p) == color)
             .count()
     }
 
     pub fn has_any_moves(&self, color: Color) -> bool {
-        self.get_positions()
+        self.get_possibly_available_positions()
             .any(|p| self.can_place(p, color))
     }
 
     pub fn get_available_moves_for(&self, color: Color) -> impl Iterator<Item = Pos2D> + '_ {
-        self.get_positions()
+        self.get_possibly_available_positions()
             .filter(move |p| self.can_place(*p, color))
     }
 
     pub fn count_available_moves(&self, color1: Color, color2: Color) -> (i32, i32) {
-        self.get_positions()
+        self.get_possibly_available_positions()
             .map(|p| (if self.can_place(p, color1) { 1 } else { 0 }, if self.can_place(p, color2) { 1 } else { 0 }))
             .fold((0,0), |acc, x| (acc.0 + x.0, acc.1 + x.1))
     }

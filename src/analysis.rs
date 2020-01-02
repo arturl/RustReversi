@@ -7,12 +7,83 @@ use crate::board::*;
 use crate::color::Color;
 use crate::stat::Stat;
 
-pub fn find_best_move(
+pub fn negamax(
     board: &Board,
     color: Color,
-    level: i32,
-    max_level: i32,
+    depth: i32,
+    cutoff_to_count: i32,
     stat: &mut Stat) -> Option<(Pos2D, i32)> {
+    let (nm_score, nm_pos) = negamax_worker(board, color, depth*2, cutoff_to_count, std::i32::MIN+1, std::i32::MAX-1, stat);
+    match nm_pos {
+        Some(pos) => Some((pos, nm_score)),
+        None => None
+    }
+}
+
+pub fn negamax_worker(
+    board: &Board,
+    color: Color,
+    depth: i32,
+    cutoff_to_count: i32,
+    alpha: i32,
+    beta: i32,
+    stat: &mut Stat) -> (i32, Option<Pos2D>) {
+
+    let mut alpha = alpha;
+    let mut possible_moves: Vec<_> = vec![];
+
+    let mut early_out = depth == 0;
+    if !early_out {
+        possible_moves = board.get_available_moves_for(color).collect::<Vec<_>>();
+        if possible_moves.len() == 0 {
+            early_out = true;
+        }
+    }
+
+    if early_out {
+        let score = eval(&board, color, cutoff_to_count);
+        return (score, None);
+    }
+
+    let mut value = std::i32::MIN+1; // +1 to prevent 'attempt to negate with overflow'
+    let mut best_move = None;
+    for mv in possible_moves {
+        let mut child = Board::new_from(board);
+        child.place(mv, color);
+        stat.nodes_viewed += 1;
+
+        let score: i32;
+        let (nm_score, _) = negamax_worker(&child, color.opposite(), depth-1, cutoff_to_count, -beta, -alpha, stat);
+        score = -nm_score;
+
+        if score > value {
+            value = score;
+            best_move = Some(mv);
+        }
+
+        alpha = ::std::cmp::max(alpha, value);
+        if alpha >= beta {
+            break; // cut-off
+        }
+    }
+
+    (value, best_move)
+}
+
+
+// Timing for initial c4:
+// level 4 -> 4s
+// level 5 -> 168s
+// level 6 -> 5163s
+pub fn minimax(
+    board: &Board,
+    color: Color,
+    depth: i32,
+    cutoff_to_count: i32,
+    stat: &mut Stat) -> Option<(Pos2D, i32)> {
+    if depth == 0 {
+        panic!("depth cannot be 0!");
+    }
     let possible_moves = board.get_available_moves_for(color);
     let mut max_score = std::i32::MIN;
     let mut best_move: Option<(Pos2D, i32)> = None;
@@ -33,14 +104,14 @@ pub fn find_best_move(
 
             let oppo_score: i32;
 
-            if level < max_level {
-                let best2 = find_best_move(&board_copy2, color, level + 1, max_level, stat);
+            if depth > 1 {
+                let best2 = minimax(&board_copy2, color, depth-1, cutoff_to_count, stat);
                 oppo_score = match best2 {
                     Some(s) => s.1,
-                    None => eval(&board_copy2, color, max_level),
+                    None => eval(&board_copy2, color, cutoff_to_count),
                 };
             } else {
-                oppo_score = eval(&board_copy2, color, max_level);
+                oppo_score = eval(&board_copy2, color, cutoff_to_count);
             }
 
             // Alpha-beta pruning
@@ -56,7 +127,7 @@ pub fn find_best_move(
 
         let score = match best_oppo_move {
             Some((_, s)) => s,
-            None => eval(&board_copy, color, max_level),
+            None => eval(&board_copy, color, cutoff_to_count),
         };
 
         if score > max_score {
@@ -190,10 +261,10 @@ pub fn eval_corners(board: &Board, color: Color) -> i32 {
     score
 }
 
-pub fn eval(board: &Board, color: Color, level: i32) -> i32 {
+pub fn eval(board: &Board, color: Color, cutoff_to_count: i32) -> i32 {
     let occupied = board.num_occupied();
     let mut score: i32;
-    if occupied < (64 - 2*level) as usize {
+    if occupied < cutoff_to_count as usize {
 
         // What matters at this stage is stable cells, plus minimizing number of opponent moves
 
