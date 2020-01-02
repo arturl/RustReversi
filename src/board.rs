@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+﻿#![allow(dead_code)]
 
 use crate::color::Color;
 use crate::stat::*;
@@ -119,14 +119,19 @@ impl Board {
     pub fn print(&self) {
         println!("      A     B     C     D     E     F     G     H");
         //println!("      0     1     2     3     4     5     6     7");
-        println!("   |-----|-----|-----|-----|-----|-----|-----|-----");
+        println!("   ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐");
         for i in 0..8 {
-            print!("{}  |", i);
+            print!("{}  │", i);
             for j in 0..8 {
-                print!("  {}  |", self.get_at(Pos2D::new(j, i)));
+                print!("  {}  │", self.get_at(Pos2D::new(j, i)));
             }
             println!("");
-            println!("   |-----|-----|-----|-----|-----|-----|-----|-----");
+            if i == 7 {
+                println!("   └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘");
+            }
+            else {
+                println!("   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤");
+            }
         }
     }
 
